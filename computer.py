@@ -1,5 +1,4 @@
 import random
-import board
 
 def DecideMove(board):
     squares = board.GetEmptySquares()
