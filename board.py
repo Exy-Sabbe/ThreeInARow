@@ -2,6 +2,7 @@ import pygame
 import pygame.freetype
 import random
 import math
+import copy
 import computer
 import player
 from enum import Enum
@@ -142,4 +143,16 @@ class Board():
 
         text_rect = self.__font.get_rect(text)
         text_rect.center = (self.__size / 2, self.__size / 2)
+        black_rect = copy.copy(text_rect)
+        black_rect.x -= 22
+        black_rect.y -= 22
+        black_rect.width += 44
+        black_rect.height += 44
+        white_rect = copy.copy(text_rect)
+        white_rect.x -= 20
+        white_rect.y -= 20
+        white_rect.width += 40
+        white_rect.height += 40
+        pygame.draw.rect(self.__window, (50, 50, 50), black_rect)
+        pygame.draw.rect(self.__window, (255, 255, 255), white_rect)
         self.__font.render_to(self.__window, text_rect, text, (0, 0, 0))
