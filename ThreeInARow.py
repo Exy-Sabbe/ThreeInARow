@@ -26,7 +26,6 @@ clock = pygame.time.Clock()
 
 gameboard = board.Board(window, BACKGROUND_BAR_WIDTH, GetImagePath("cross.png"), GetImagePath("circle.png"))
 
-game_over = False
 # ----GAME LOOP----
 while True:
     # Event handler (like inputs)
@@ -37,18 +36,16 @@ while True:
             pygame.quit()
             exit()
 
-    if not game_over:
-        # ----UPDATE----
-        # Convert delta_time to seconds instead of milliseconds
-        gameboard.Update()
+    # ----UPDATE----
+    gameboard.Update()
 
-        # ----DRAW----
-        # Draw background, with 2 horz and 2 vert bars
-        window.fill("white")
-        gameboard.Draw()
+    # ----DRAW----
+    # Draw background
+    window.fill("white")
+    gameboard.Draw()
 
-        # Update display every frame
-        pygame.display.update()
+    # Update display every frame
+    pygame.display.update()
 
     # Force game at 60 FPS (basically freeze game loop until enough time has passed for 1 frame)
     clock.tick(60)

@@ -1,4 +1,5 @@
 import pygame
+import pygame.freetype
 import random
 import math
 import computer
@@ -6,9 +7,9 @@ import player
 from enum import Enum
 
 class TileState(Enum):
-    Empty = 0,
-    Player = 1,
-    Computer = 2
+    Empty = 1
+    Player = 2
+    Computer = 3
 
 class Board():
     def __init__(self, window, bar_width, player_image_path, computer_image_path):
@@ -21,13 +22,60 @@ class Board():
         self.__player_image = pygame.transform.scale(player_image, (self.__tile_size, self.__tile_size))
         computer_image = pygame.image.load(computer_image_path)
         self.__computer_image = pygame.transform.scale(computer_image, (self.__tile_size, self.__tile_size))
+        self.__font = pygame.freetype.SysFont("Arial", 60)
         self.__is_player_turn = bool(random.randint(0, 1))
         self.__board = []
+        self.__filled_squares = 0
+        self.__winner = None
         for _ in range(self.__tile_amount):
             row = []
             for _ in range(self.__tile_amount):
                 row.append(TileState.Empty)
             self.__board.append(row)
+
+    def __ResetGame(self):
+        for row in range(self.__tile_amount):
+            for col in range(self.__tile_amount):
+                self.__board[row][col] = TileState.Empty
+        self.__filled_squares = 0
+        self.__is_player_turn = bool(random.randint(0, 1))
+        self.__winner = None
+
+    def __IsGameOver(self, lastMove):
+        checkState = TileState(3 - int(self.__is_player_turn))
+        # Check row
+        for col in range(self.__tile_amount):
+            if self.__board[lastMove[0]][col] != checkState:
+                break
+            if col == self.__tile_amount - 1:
+                self.__winner = checkState
+
+        # Check col
+        for row in range(self.__tile_amount):
+            if self.__board[row][lastMove[1]] != checkState:
+                break
+            if row == self.__tile_amount - 1:
+                self.__winner = checkState
+            
+        # Check diag
+        if lastMove[0] == lastMove[1]:
+            for i in range(self.__tile_amount):
+                if self.__board[i][i] != checkState:
+                    break
+                if i == self.__tile_amount - 1:
+                    self.__winner = checkState
+
+        # Check antidiag
+        if lastMove[0] + lastMove[1] == self.__tile_amount - 1:
+            for i in range(self.__tile_amount):
+                if self.__board[i][self.__tile_amount - i - 1] != checkState:
+                    break
+                if i == self.__tile_amount - 1:
+                    self.__winner = checkState
+
+        # Check full board
+        if self.__filled_squares == self.__tile_amount**2 and self.__winner == None:
+            self.__winner = TileState.Empty
 
     def GetEmptySquares(self):
         squares = []
@@ -47,19 +95,24 @@ class Board():
         return self.__board[pos[0]][pos[1]] == TileState.Empty
 
     def Update(self):
-        if not self.GetEmptySquares():
+        if self.__winner != None:
+            if pygame.mouse.get_just_pressed()[0]:
+                self.__ResetGame()
             return
 
+        move = None
         if self.__is_player_turn:
             move = player.DecideMove(self)
-            if move != None:
-                self.__board[move[0]][move[1]] = TileState.Player
-                self.__is_player_turn = False
+            if move == None:
+                return
+            self.__board[move[0]][move[1]] = TileState.Player
         else:
             move = computer.DecideMove(self)
             self.__board[move[0]][move[1]] = TileState.Computer
-            self.__is_player_turn = True
 
+        self.__filled_squares += 1
+        self.__IsGameOver(move)
+        self.__is_player_turn = not self.__is_player_turn
 
     def Draw(self):
         # Background stripes
@@ -76,3 +129,17 @@ class Board():
                     self.__window.blit(self.__player_image, (row * (self.__bar_width + self.__tile_size), col * (self.__bar_width + self.__tile_size)))
                 elif self.__board[row][col] == TileState.Computer:
                     self.__window.blit(self.__computer_image, (row * (self.__bar_width + self.__tile_size), col * (self.__bar_width + self.__tile_size)))
+
+        text = ""
+        if self.__winner == None:
+            return
+        elif self.__winner == TileState.Player:
+            text = "You Win!"
+        elif self.__winner == TileState.Computer:
+            text = "You Lose!"
+        elif self.__winner == TileState.Empty:
+            text = "Draw!"
+
+        text_rect = self.__font.get_rect(text)
+        text_rect.center = (self.__size / 2, self.__size / 2)
+        self.__font.render_to(self.__window, text_rect, text, (0, 0, 0))
